@@ -2,6 +2,7 @@ var menuDiv = document.getElementById("menuDiv");
 var player;
 var mouseX;
 var mouseY;
+const FPS = 60;
 
 var gameCanvas = {
     canvas: document.getElementById("GC"),
@@ -14,7 +15,7 @@ var gameCanvas = {
 
         player = new Player(this.canvas.width / 2, this.canvas.height / 2);
 
-        this.interval = setInterval(mainLoop, 20);
+        this.interval = setInterval(mainLoop, 1000 / FPS);
     },
 
     endGame: function () {
@@ -35,9 +36,10 @@ class Player {
 
     mass = 10;
     vjump = 5;
-    maxJumpDistance = 100;
+    maxJumpDistance = 300;
     timeToCharge = 2000;
     startedChargingAt;
+    landTime;
 
     isResting = false;
     isAiming = false;
@@ -63,6 +65,8 @@ class Player {
 
         this.vx = this.vjump * Math.cos(theta);
         this.vy = this.vjump * Math.sin(theta);
+
+        this.landTime = Date.now() + (1000 * Math.sqrt(Math.pow(this.landx - this.x, 2) + Math.pow(this.landy - this.y, 2)) / (this.vjump * FPS))
     }
 
     update() {
@@ -72,7 +76,13 @@ class Player {
             this.aim();
 
         } else if (this.isJumping) {
+            if (Date.now() >= this.landTime) {
+                this.vx = 0;
+                this.vy = 0;
 
+                this.isJumping = false;
+                this.isResting = true;
+            }
         }
 
         this.x += this.vx;
@@ -107,8 +117,6 @@ document.addEventListener("mousedown", () => {
         player.isAiming = true;
 
         player.startedChargingAt = Date.now();
-
-        console.log("aiming");
     }
 });
 document.addEventListener("mouseup", () => {
@@ -117,8 +125,6 @@ document.addEventListener("mouseup", () => {
         player.isJumping = true;
 
         player.jump();
-
-        console.log("jumping");
     }
 });
 document.addEventListener("mousemove", e => {
