@@ -4,11 +4,18 @@
 <head>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="ownStyles.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <title>Lily Hopper</title>
 </head>
 <body>
-    <div id="menuDiv" style="display:block">
-        <button onclick="gameCanvas.startGame()">Play!</button>
+    <div id="menuDiv" class="card" style="display:block">
+        <div class="card-body">
+            <h3 class="card-title">Lily Hopper</h3>
+            <p class="card-text">
+                Lily hopper is a simple browser game I made for fun.
+            </p>
+            <button class="btn btn-primary" onclick="gameCanvas.startGame()">Play!</button>
+        </div>
     </div>
     
     <canvas id="GC" style="display:none" width="1000" height="500"></canvas>

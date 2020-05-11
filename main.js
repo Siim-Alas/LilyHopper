@@ -11,13 +11,15 @@ var gameCanvas = {
     startGame: function () {
         menuDiv.style.display = "none";
         this.canvas.style.display = "block";
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
 
         this.context = this.canvas.getContext("2d");
 
         player = new Player(this.canvas.width / 2, this.canvas.height / 2);
 
         lilyPads = [];
-        for (i = 0; i < 5; i++) {
+        for (i = 0; i < 1 + (this.canvas.width * this.canvas.height / 25000); i++) {
             lilyPads.push(new LilyPad());
         }
 
@@ -97,10 +99,10 @@ class Player {
         this.y = this.landy;
 
         for (i = 0; i < lilyPads.length; i++) {
-            if ((this.x >= lilyPads[i].x - lilyPads[i].width / 2 ) &&
-                (this.x <= lilyPads[i].x + lilyPads[i].width / 2) && 
-                (this.y >= lilyPads[i].y - lilyPads[i].height / 2) && 
-                (this.y <= lilyPads[i].y + lilyPads[i].height / 2)) {
+            if ((this.x + this.width / 2 >= lilyPads[i].x - lilyPads[i].width / 2 ) &&
+                (this.x - this.width / 2 <= lilyPads[i].x + lilyPads[i].width / 2) && 
+                (this.y + this.height / 2 >= lilyPads[i].y - lilyPads[i].height / 2) && 
+                (this.y - this.height / 2 <= lilyPads[i].y + lilyPads[i].height / 2)) {
 
                 this.hostIndex = i;
                 lilyPads[i].vx = (lilyPads[i].vx * lilyPads[i].mass + this.vx * this.mass) / (lilyPads[i].mass + this.mass);
@@ -139,15 +141,12 @@ class Player {
         this.x += this.vx;
         this.y += this.vy;
 
-        if (this.x < this.width / 2) {
-            this.x = this.width / 2;
-        } else if (this.x > gameCanvas.canvas.width - this.width / 2) {
-            this.x = gameCanvas.canvas.width - this.width / 2;
-        }
-        if (this.y < this.height / 2) {
-            this.y = this.height / 2;
-        } else if (this.y > gameCanvas.canvas.height - this.height / 2) {
-            this.y = gameCanvas.canvas.height - this.height / 2;
+        if ((this.x < this.width / -2) || 
+            (this.x > gameCanvas.canvas.width + this.width / 2) || 
+            (this.y < this.height / -2) || 
+            (this.y > gameCanvas.canvas.height + this.height / 2)) {
+
+            gameCanvas.endGame();
         }
 
         this.draw();
@@ -163,6 +162,7 @@ class Player {
             gameCanvas.context.moveTo(this.x, this.y);
             gameCanvas.context.lineTo(this.landx, this.landy);
 
+            gameCanvas.context.strokeStyle = "#FF0000";
             gameCanvas.context.stroke();
         }
     }
@@ -190,8 +190,12 @@ class LilyPad {
     }
 
     recycle() {
-        this.x = (Math.random() < 0.5) ? -1 * getRandomNum(this.width, this.maxXOffset) : gameCanvas.canvas.width + getRandomNum(0, this.maxXOffset);
-        this.y = (Math.random() < 0.5) ? -1 * getRandomNum(this.height, this.maxYOffset) : gameCanvas.canvas.height + getRandomNum(0, this.maxYOffset);
+        this.x = getRandomNum(-1 * this.maxXOffset, gameCanvas.canvas.width + 2 * this.maxXOffset);
+        if ((this.x < this.width / -2) || (this.x > gameCanvas.canvas.width + this.width / 2)) {
+            this.y = getRandomNum(-1 * this.maxYOffset, gameCanvas.canvas.height + 2 * this.maxYOffset);
+        } else {
+            this.y = (Math.random() < 0.5) ? getRandomNum(-1 * this.maxYOffset, this.height) : getRandomNum(gameCanvas.canvas.height + this.height, this.maxYOffset)
+        }
 
         let theta = Math.atan2(this.y - Math.random() * gameCanvas.canvas.height, this.x - Math.random() * gameCanvas.canvas.width);
         let v = Math.random() * this.vmax;
