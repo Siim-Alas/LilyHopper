@@ -16,16 +16,22 @@ var gameCanvas = {
 
         player = new Player(this.canvas.width / 2, this.canvas.height / 2);
 
+        lilyPads = [];
         for (i = 0; i < 5; i++) {
             lilyPads.push(new LilyPad());
         }
+
+        lilyPads[0].x = this.canvas.width / 2;
+        lilyPads[0].y = this.canvas.height / 2;
+        player.hostIndex = 0;
 
         this.interval = setInterval(mainLoop, 1000 / FPS);
     },
 
     endGame: function () {
         clearInterval(this.interval);
-        gameDiv.innerHTML = "";
+        this.canvas.style.display = "none";
+        menuDiv.style.display = "block";
     },
 };
 
@@ -33,16 +39,17 @@ class Player {
     x = 0;
     y = 0;
 
+    width = 15;
+    height = 10;
+
     vx = 0;
     vy = 0;
 
     landx = 0;
     landy = 0;
 
-    width = 15;
-    height = 10;
+    hostIndex = -1;
 
-    mass = 10;
     vjump = 5;
     maxJumpDistance = 300;
     timeToCharge = 2000;
@@ -72,6 +79,8 @@ class Player {
 
         this.vx = this.vjump * Math.cos(theta);
         this.vy = this.vjump * Math.sin(theta);
+
+        this.hostIndex = -1;
     }
 
     land() {
@@ -83,10 +92,30 @@ class Player {
 
         this.isJumping = false;
         this.isResting = true;
+
+        for (i = 0; i < lilyPads.length; i++) {
+            if ((this.x >= lilyPads[i].x) &&
+                (this.x <= lilyPads[i].x + lilyPads[i].width) && 
+                (this.y >= lilyPads[i].y) && 
+                (this.y <= lilyPads[i].y + lilyPads[i].height)) {
+
+                this.hostIndex = i;
+                break;
+            }
+        }
+
+        if (this.hostIndex === -1) {
+            gameCanvas.endGame();
+        }
     }
 
     update() {
         if (this.isResting) {
+            this.x = lilyPads[this.hostIndex].x;
+            this.y = lilyPads[this.hostIndex].y;
+
+            this.vx = lilyPads[this.hostIndex].vx;
+            this.vy = lilyPads[this.hostIndex].vy;
 
         } else if (this.isAiming) {
             this.aim();
@@ -116,6 +145,7 @@ class Player {
     }
 
     draw() {
+        gameCanvas.context.fillStyle = "#FF0000";
         gameCanvas.context.fillRect(this.x, this.y, this.width, this.height);
 
         if (this.isAiming) {
@@ -137,15 +167,13 @@ class LilyPad {
     vy = 0;
 
     // Has to be negative
-    vmax = -2;
+    vmax = -1;
 
-    width = 20;
-    height = 20;
+    width = 50;
+    height = 50;
 
     maxXOffset = 100;
     maxYOffset = 100;
-
-    mass = 10;
 
     constructor() {
         this.recycle();
@@ -177,6 +205,7 @@ class LilyPad {
     }
 
     draw() {
+        gameCanvas.context.fillStyle = "#000";
         gameCanvas.context.fillRect(this.x, this.y, this.width, this.height);
     }
 }
@@ -188,11 +217,11 @@ function getRandomNum(min, range) {
 function mainLoop() {
     gameCanvas.context.clearRect(0, 0, gameCanvas.canvas.width, gameCanvas.canvas.height)
 
-    player.update();
-
     for (i = 0; i < lilyPads.length; i++) {
         lilyPads[i].update();
     }
+
+    player.update();
 }
 
 document.addEventListener("mousedown", () => {
