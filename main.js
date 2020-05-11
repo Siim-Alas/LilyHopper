@@ -30,6 +30,8 @@ var gameCanvas = {
 
     endGame: function () {
         clearInterval(this.interval);
+        player = null;
+
         this.canvas.style.display = "none";
         menuDiv.style.display = "block";
     },
@@ -41,6 +43,7 @@ class Player {
 
     width = 15;
     height = 10;
+    mass = 1;
 
     vx = 0;
     vy = 0;
@@ -80,18 +83,18 @@ class Player {
         this.vx = this.vjump * Math.cos(theta);
         this.vy = this.vjump * Math.sin(theta);
 
+        lilyPads[this.hostIndex].vx -= this.vx * (this.mass / lilyPads[this.hostIndex].mass);
+        lilyPads[this.hostIndex].vy -= this.vy * (this.mass / lilyPads[this.hostIndex].mass);
+
         this.hostIndex = -1;
+
+        player.isAiming = false;
+        player.isJumping = true;
     }
 
     land() {
         this.x = this.landx;
         this.y = this.landy;
-
-        this.vx = 0;
-        this.vy = 0;
-
-        this.isJumping = false;
-        this.isResting = true;
 
         for (i = 0; i < lilyPads.length; i++) {
             if ((this.x >= lilyPads[i].x - lilyPads[i].width / 2 ) &&
@@ -100,9 +103,15 @@ class Player {
                 (this.y <= lilyPads[i].y + lilyPads[i].height / 2)) {
 
                 this.hostIndex = i;
+                lilyPads[i].vx = (lilyPads[i].vx * lilyPads[i].mass + this.vx * this.mass) / (lilyPads[i].mass + this.mass);
+                lilyPads[i].vy = (lilyPads[i].vy * lilyPads[i].mass + this.vy * this.mass) / (lilyPads[i].mass + this.mass);
+
                 break;
             }
         }
+
+        this.isJumping = false;
+        this.isResting = true;
 
         if (this.hostIndex === -1) {
             gameCanvas.endGame();
@@ -171,6 +180,7 @@ class LilyPad {
 
     width = 50;
     height = 50;
+    mass = 10;
 
     maxXOffset = 100;
     maxYOffset = 100;
@@ -234,9 +244,6 @@ document.addEventListener("mousedown", () => {
 });
 document.addEventListener("mouseup", () => {
     if ((player != undefined) && (player.isAiming)) {
-        player.isAiming = false;
-        player.isJumping = true;
-
         player.jump();
     }
 });
