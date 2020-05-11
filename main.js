@@ -3,6 +3,7 @@ var player;
 var mouseX;
 var mouseY;
 const FPS = 60;
+var lilyPads = [];
 
 var gameCanvas = {
     canvas: document.getElementById("GC"),
@@ -14,6 +15,10 @@ var gameCanvas = {
         this.context = this.canvas.getContext("2d");
 
         player = new Player(this.canvas.width / 2, this.canvas.height / 2);
+
+        for (i = 0; i < 5; i++) {
+            lilyPads.push(new LilyPad());
+        }
 
         this.interval = setInterval(mainLoop, 1000 / FPS);
     },
@@ -34,12 +39,14 @@ class Player {
     landx = 0;
     landy = 0;
 
+    width = 15;
+    height = 10;
+
     mass = 10;
     vjump = 5;
     maxJumpDistance = 300;
     timeToCharge = 2000;
     startedChargingAt;
-    landTime;
 
     isResting = false;
     isAiming = false;
@@ -65,8 +72,17 @@ class Player {
 
         this.vx = this.vjump * Math.cos(theta);
         this.vy = this.vjump * Math.sin(theta);
+    }
 
-        this.landTime = Date.now() + (1000 * Math.sqrt(Math.pow(this.landx - this.x, 2) + Math.pow(this.landy - this.y, 2)) / (this.vjump * FPS))
+    land() {
+        this.x = this.landx;
+        this.y = this.landy;
+
+        this.vx = 0;
+        this.vy = 0;
+
+        this.isJumping = false;
+        this.isResting = true;
     }
 
     update() {
@@ -76,23 +92,31 @@ class Player {
             this.aim();
 
         } else if (this.isJumping) {
-            if (Date.now() >= this.landTime) {
-                this.vx = 0;
-                this.vy = 0;
-
-                this.isJumping = false;
-                this.isResting = true;
+            if ((Math.abs(this.landx - this.x) < 2 * Math.abs(this.vx)) && 
+                (Math.abs(this.landx - this.x) < 2 * Math.abs(this.vx))) {
+                this.land();
             }
         }
 
         this.x += this.vx;
         this.y += this.vy;
 
+        if (this.x < 0) {
+            this.x = 0;
+        } else if (this.x > gameCanvas.canvas.width - this.width) {
+            this.x = gameCanvas.canvas.width - this.width;
+        }
+        if (this.y < 0) {
+            this.y = 0;
+        } else if (this.y > gameCanvas.canvas.height - this.height) {
+            this.y = gameCanvas.canvas.height - this.height;
+        }
+
         this.draw();
     }
 
     draw() {
-        gameCanvas.context.fillRect(this.x, this.y, 50, 20);
+        gameCanvas.context.fillRect(this.x, this.y, this.width, this.height);
 
         if (this.isAiming) {
             gameCanvas.context.beginPath();
@@ -105,10 +129,70 @@ class Player {
     }
 }
 
+class LilyPad {
+    x = 0;
+    y = 0;
+
+    vx = 0;
+    vy = 0;
+
+    // Has to be negative
+    vmax = -2;
+
+    width = 20;
+    height = 20;
+
+    maxXOffset = 100;
+    maxYOffset = 100;
+
+    mass = 10;
+
+    constructor() {
+        this.recycle();
+    }
+
+    recycle() {
+        this.x = (Math.random() < 0.5) ? -1 * getRandomNum(this.width, this.maxXOffset) : gameCanvas.canvas.width + getRandomNum(0, this.maxXOffset);
+        this.y = (Math.random() < 0.5) ? -1 * getRandomNum(this.height, this.maxYOffset) : gameCanvas.canvas.height + getRandomNum(0, this.maxYOffset);
+
+        let theta = Math.atan2(this.y - Math.random() * gameCanvas.canvas.height, this.x - Math.random() * gameCanvas.canvas.width);
+        let v = Math.random() * this.vmax;
+
+        this.vx = v * Math.cos(theta);
+        this.vy = v * Math.sin(theta);
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (((this.vx < 0) && (this.x < 0)) ||
+            ((this.vx > 0) && (this.x > gameCanvas.canvas.width - this.width)) ||
+            ((this.vy < 0) && (this.y < 0)) ||
+            ((this.vy > 0) && (this.y > gameCanvas.canvas.height - this.height))) {
+            this.recycle();
+        }
+
+        this.draw();
+    }
+
+    draw() {
+        gameCanvas.context.fillRect(this.x, this.y, this.width, this.height);
+    }
+}
+
+function getRandomNum(min, range) {
+    return min + Math.random() * range;
+}
+
 function mainLoop() {
     gameCanvas.context.clearRect(0, 0, gameCanvas.canvas.width, gameCanvas.canvas.height)
 
     player.update();
+
+    for (i = 0; i < lilyPads.length; i++) {
+        lilyPads[i].update();
+    }
 }
 
 document.addEventListener("mousedown", () => {
