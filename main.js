@@ -94,10 +94,10 @@ class Player {
         this.isResting = true;
 
         for (i = 0; i < lilyPads.length; i++) {
-            if ((this.x >= lilyPads[i].x) &&
-                (this.x <= lilyPads[i].x + lilyPads[i].width) && 
-                (this.y >= lilyPads[i].y) && 
-                (this.y <= lilyPads[i].y + lilyPads[i].height)) {
+            if ((this.x >= lilyPads[i].x - lilyPads[i].width / 2 ) &&
+                (this.x <= lilyPads[i].x + lilyPads[i].width / 2) && 
+                (this.y >= lilyPads[i].y - lilyPads[i].height / 2) && 
+                (this.y <= lilyPads[i].y + lilyPads[i].height / 2)) {
 
                 this.hostIndex = i;
                 break;
@@ -130,15 +130,15 @@ class Player {
         this.x += this.vx;
         this.y += this.vy;
 
-        if (this.x < 0) {
-            this.x = 0;
-        } else if (this.x > gameCanvas.canvas.width - this.width) {
-            this.x = gameCanvas.canvas.width - this.width;
+        if (this.x < this.width / 2) {
+            this.x = this.width / 2;
+        } else if (this.x > gameCanvas.canvas.width - this.width / 2) {
+            this.x = gameCanvas.canvas.width - this.width / 2;
         }
-        if (this.y < 0) {
-            this.y = 0;
-        } else if (this.y > gameCanvas.canvas.height - this.height) {
-            this.y = gameCanvas.canvas.height - this.height;
+        if (this.y < this.height / 2) {
+            this.y = this.height / 2;
+        } else if (this.y > gameCanvas.canvas.height - this.height / 2) {
+            this.y = gameCanvas.canvas.height - this.height / 2;
         }
 
         this.draw();
@@ -146,7 +146,7 @@ class Player {
 
     draw() {
         gameCanvas.context.fillStyle = "#FF0000";
-        gameCanvas.context.fillRect(this.x, this.y, this.width, this.height);
+        gameCanvas.context.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
 
         if (this.isAiming) {
             gameCanvas.context.beginPath();
@@ -194,10 +194,10 @@ class LilyPad {
         this.x += this.vx;
         this.y += this.vy;
 
-        if (((this.vx < 0) && (this.x < 0)) ||
-            ((this.vx > 0) && (this.x > gameCanvas.canvas.width - this.width)) ||
-            ((this.vy < 0) && (this.y < 0)) ||
-            ((this.vy > 0) && (this.y > gameCanvas.canvas.height - this.height))) {
+        if (((this.vx < 0) && (this.x < this.width / -2)) ||
+            ((this.vx > 0) && (this.x > gameCanvas.canvas.width + this.width / 2)) ||
+            ((this.vy < 0) && (this.y < this.height / -2)) ||
+            ((this.vy > 0) && (this.y > gameCanvas.canvas.height + this.height / 2))) {
             this.recycle();
         }
 
@@ -206,7 +206,7 @@ class LilyPad {
 
     draw() {
         gameCanvas.context.fillStyle = "#000";
-        gameCanvas.context.fillRect(this.x, this.y, this.width, this.height);
+        gameCanvas.context.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
     }
 }
 
