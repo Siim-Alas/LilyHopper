@@ -105,8 +105,6 @@ class Player {
                 lilyPads[i].vx = (lilyPads[i].vx * lilyPads[i].mass + this.vx * this.mass) / (lilyPads[i].mass + this.mass);
                 lilyPads[i].vy = (lilyPads[i].vy * lilyPads[i].mass + this.vy * this.mass) / (lilyPads[i].mass + this.mass);
 
-                console.log("landing");
-
                 break;
             }
         }
@@ -235,7 +233,8 @@ function mainLoop() {
         lilyPads[i].update();
     }
 
-    for (i = 0; i < lilyPads.length / 2; i++) {
+    let count = 0;
+    for (i = 0; i < lilyPads.length - 1; i++) {
         for (j = i + 1; j < lilyPads.length; j++) {
             // All lilipads are the same size
             if (Math.pow(lilyPads[i].x - lilyPads[j].x, 2) + Math.pow(lilyPads[i].y - lilyPads[j].y, 2) <= Math.pow(2 * lilyPads[i].radius, 2)) {
