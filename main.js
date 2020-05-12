@@ -99,14 +99,13 @@ class Player {
         this.y = this.landy;
 
         for (i = 0; i < lilyPads.length; i++) {
-            if ((this.x + this.width / 2 >= lilyPads[i].x - lilyPads[i].width / 2 ) &&
-                (this.x - this.width / 2 <= lilyPads[i].x + lilyPads[i].width / 2) && 
-                (this.y + this.height / 2 >= lilyPads[i].y - lilyPads[i].height / 2) && 
-                (this.y - this.height / 2 <= lilyPads[i].y + lilyPads[i].height / 2)) {
+            if (Math.pow(lilyPads[i].x - this.x, 2) + Math.pow(lilyPads[i].y - this.y, 2) <= Math.pow(lilyPads[i].radius, 2)) {
 
                 this.hostIndex = i;
                 lilyPads[i].vx = (lilyPads[i].vx * lilyPads[i].mass + this.vx * this.mass) / (lilyPads[i].mass + this.mass);
                 lilyPads[i].vy = (lilyPads[i].vy * lilyPads[i].mass + this.vy * this.mass) / (lilyPads[i].mass + this.mass);
+
+                console.log("landing");
 
                 break;
             }
@@ -174,12 +173,10 @@ class LilyPad {
 
     vx = 0;
     vy = 0;
-
     // Has to be negative
     vmax = -1;
 
-    width = 50;
-    height = 50;
+    radius = 30;
     mass = 10;
 
     maxXOffset = 100;
@@ -191,10 +188,10 @@ class LilyPad {
 
     recycle() {
         this.x = getRandomNum(-1 * this.maxXOffset, gameCanvas.canvas.width + 2 * this.maxXOffset);
-        if ((this.x < this.width / -2) || (this.x > gameCanvas.canvas.width + this.width / 2)) {
+        if ((this.x < -1 * this.radius) || (this.x > gameCanvas.canvas.width + this.radius)) {
             this.y = getRandomNum(-1 * this.maxYOffset, gameCanvas.canvas.height + 2 * this.maxYOffset);
         } else {
-            this.y = (Math.random() < 0.5) ? getRandomNum(-1 * this.maxYOffset, this.height) : getRandomNum(gameCanvas.canvas.height + this.height, this.maxYOffset)
+            this.y = (Math.random() < 0.5) ? getRandomNum(-1 * this.maxYOffset, this.radius) : getRandomNum(gameCanvas.canvas.height + this.radius, this.maxYOffset)
         }
 
         let theta = Math.atan2(this.y - Math.random() * gameCanvas.canvas.height, this.x - Math.random() * gameCanvas.canvas.width);
@@ -208,10 +205,10 @@ class LilyPad {
         this.x += this.vx;
         this.y += this.vy;
 
-        if (((this.vx < 0) && (this.x < this.width / -2)) ||
-            ((this.vx > 0) && (this.x > gameCanvas.canvas.width + this.width / 2)) ||
-            ((this.vy < 0) && (this.y < this.height / -2)) ||
-            ((this.vy > 0) && (this.y > gameCanvas.canvas.height + this.height / 2))) {
+        if (((this.vx < 0) && (this.x < -1 * this.radius)) ||
+            ((this.vx > 0) && (this.x > gameCanvas.canvas.width + this.radius)) ||
+            ((this.vy < 0) && (this.y < -1 * this.radius)) ||
+            ((this.vy > 0) && (this.y > gameCanvas.canvas.height + this.radius))) {
             this.recycle();
         }
 
@@ -220,7 +217,10 @@ class LilyPad {
 
     draw() {
         gameCanvas.context.fillStyle = "#000";
-        gameCanvas.context.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+
+        gameCanvas.context.beginPath();
+        gameCanvas.context.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+        gameCanvas.context.fill();
     }
 }
 
@@ -233,6 +233,32 @@ function mainLoop() {
 
     for (i = 0; i < lilyPads.length; i++) {
         lilyPads[i].update();
+    }
+
+    for (i = 0; i < lilyPads.length / 2; i++) {
+        for (j = i + 1; j < lilyPads.length; j++) {
+            // All lilipads are the same size
+            if (Math.pow(lilyPads[i].x - lilyPads[j].x, 2) + Math.pow(lilyPads[i].y - lilyPads[j].y, 2) <= Math.pow(2 * lilyPads[i].radius, 2)) {
+                // All lilypads are the same mass
+                // v_avg = (v_i + v_j) / 2
+                // delta_v = -2 * (v_i - v_avg) = 2 (v_avg - v_i) = v_j - v_i
+                // v_i + delta_v = v_i + v_j - v_i = v_j
+
+                let ix = lilyPads[i].vx;
+                let iy = lilyPads[i].vy;
+
+                lilyPads[i].vx = lilyPads[j].vx;
+                lilyPads[i].vy = lilyPads[j].vy;
+
+                lilyPads[j].vx = ix;
+                lilyPads[j].vy = iy;
+
+                let theta = Math.atan2(lilyPads[i].y - lilyPads[j].y, lilyPads[i].x - lilyPads[j].x);
+
+                lilyPads[i].x = lilyPads[j].x + 2.01 * lilyPads[i].radius * Math.cos(theta);
+                lilyPads[i].y = lilyPads[j].y + 2.01 * lilyPads[i].radius * Math.sin(theta);
+            }
+        }
     }
 
     player.update();
