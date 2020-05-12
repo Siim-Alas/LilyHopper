@@ -45,6 +45,7 @@ class Player {
 
     width = 15;
     height = 10;
+    sizeFactor = 1;
     mass = 1;
 
     vx = 0;
@@ -57,8 +58,11 @@ class Player {
 
     vjump = 5;
     maxJumpDistance = 300;
+    jumpYOffset = 0;
+
     timeToCharge = 2000;
     startedChargingAt;
+    jumpHaflWayTime;
 
     isResting = false;
     isAiming = false;
@@ -90,6 +94,8 @@ class Player {
 
         this.hostIndex = -1;
 
+        this.jumpHaflWayTime = Date.now() + (500 * Math.sqrt(Math.pow(this.landx - this.x, 2) + Math.pow(this.landy - this.y, 2)) / (this.vjump * FPS));
+
         player.isAiming = false;
         player.isJumping = true;
     }
@@ -112,20 +118,24 @@ class Player {
         this.isJumping = false;
         this.isResting = true;
 
+        this.sizeFactor = 1;
+        this.jumpYOffset = 0;
+
         if (this.hostIndex === -1) {
             gameCanvas.endGame();
         }
     }
 
     update() {
-        if (this.isResting) {
+        if (this.isResting || this.isAiming) {
             this.x = lilyPads[this.hostIndex].x;
             this.y = lilyPads[this.hostIndex].y;
 
             this.vx = lilyPads[this.hostIndex].vx;
             this.vy = lilyPads[this.hostIndex].vy;
 
-        } else if (this.isAiming) {
+        }
+        if (this.isAiming) {
             this.aim();
 
         } else if (this.isJumping) {
@@ -150,10 +160,7 @@ class Player {
     }
 
     draw() {
-        gameCanvas.context.fillStyle = "#FF0000";
-        gameCanvas.context.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
-
-        if (this.isAiming) {
+        if (this.isAiming || this.isJumping) {
             gameCanvas.context.beginPath();
 
             gameCanvas.context.moveTo(this.x, this.y);
@@ -161,6 +168,25 @@ class Player {
 
             gameCanvas.context.strokeStyle = "#FF0000";
             gameCanvas.context.stroke();
+        }
+
+        
+        if (this.isJumping) {
+            let k = (Date.now() < this.jumpHaflWayTime) ? 1 : -1;
+
+            this.sizeFactor += 2 * (k / FPS);
+            this.jumpYOffset += -50 * (k / FPS);
+
+            gameCanvas.context.fillStyle = "#130606";
+            gameCanvas.context.fillRect(this.x - this.width * this.sizeFactor / 2, this.y - this.height * this.sizeFactor / 2,
+                this.width * this.sizeFactor, this.height * this.sizeFactor);
+
+            gameCanvas.context.fillStyle = "#FF0000";
+            gameCanvas.context.fillRect(this.x - this.width * this.sizeFactor / 2, this.y - this.height * this.sizeFactor / 2 + this.jumpYOffset,
+                                        this.width * this.sizeFactor, this.height * this.sizeFactor);
+        } else {
+            gameCanvas.context.fillStyle = "#FF0000";
+            gameCanvas.context.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
         }
     }
 }
@@ -233,7 +259,9 @@ function mainLoop() {
         lilyPads[i].update();
     }
 
-    let count = 0;
+    let theta = 0;
+    let ix = 0;
+    let iy = 0;
     for (i = 0; i < lilyPads.length - 1; i++) {
         for (j = i + 1; j < lilyPads.length; j++) {
             // All lilipads are the same size
@@ -243,16 +271,16 @@ function mainLoop() {
                 // delta_v = -2 * (v_i - v_avg) = 2 (v_avg - v_i) = v_j - v_i
                 // v_i + delta_v = v_i + v_j - v_i = v_j
 
-                let ix = lilyPads[i].vx;
-                let iy = lilyPads[i].vy;
+                theta = Math.atan2(lilyPads[i].y - lilyPads[j].y, lilyPads[i].x - lilyPads[j].x);
+
+                ix = lilyPads[i].vx;
+                iy = lilyPads[i].vy;
 
                 lilyPads[i].vx = lilyPads[j].vx;
                 lilyPads[i].vy = lilyPads[j].vy;
 
                 lilyPads[j].vx = ix;
                 lilyPads[j].vy = iy;
-
-                let theta = Math.atan2(lilyPads[i].y - lilyPads[j].y, lilyPads[i].x - lilyPads[j].x);
 
                 lilyPads[i].x = lilyPads[j].x + 2.01 * lilyPads[i].radius * Math.cos(theta);
                 lilyPads[i].y = lilyPads[j].y + 2.01 * lilyPads[i].radius * Math.sin(theta);
