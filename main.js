@@ -4,6 +4,8 @@ var mouseX;
 var mouseY;
 const FPS = 60;
 var lilyPads = [];
+var startTime;
+var timeElapsed;
 
 var gameCanvas = {
     canvas: document.getElementById("GC"),
@@ -15,6 +17,7 @@ var gameCanvas = {
         this.canvas.height = window.innerHeight;
 
         this.context = this.canvas.getContext("2d");
+        this.context.font = "30px Arial";
 
         player = new Player(this.canvas.width / 2, this.canvas.height / 2);
 
@@ -27,12 +30,16 @@ var gameCanvas = {
         lilyPads[0].y = this.canvas.height / 2;
         player.hostIndex = 0;
 
+        startTime = Date.now();
+
         this.interval = setInterval(mainLoop, 1000 / FPS);
     },
 
     endGame: function () {
         clearInterval(this.interval);
         player = null;
+
+        document.getElementById("timeP").textContent = `Time elapsed was ${Math.trunc(timeElapsed / 60000).toString().padStart(2, "0")}:${Math.trunc((timeElapsed % 60000) / 1000).toString().padStart(2, "0")}`;
 
         this.canvas.style.display = "none";
         menuDiv.style.display = "block";
@@ -240,7 +247,7 @@ class LilyPad {
     }
 
     draw() {
-        gameCanvas.context.fillStyle = "#000";
+        gameCanvas.context.fillStyle = "#00b300";
 
         gameCanvas.context.beginPath();
         gameCanvas.context.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
@@ -252,13 +259,7 @@ function getRandomNum(min, range) {
     return min + Math.random() * range;
 }
 
-function mainLoop() {
-    gameCanvas.context.clearRect(0, 0, gameCanvas.canvas.width, gameCanvas.canvas.height)
-
-    for (i = 0; i < lilyPads.length; i++) {
-        lilyPads[i].update();
-    }
-
+function bounceLilys() {
     let theta = 0;
     let vi = 0;
     let vj = 0;
@@ -298,8 +299,23 @@ function mainLoop() {
             }
         }
     }
+}
+
+function mainLoop() {
+    timeElapsed = Date.now() - startTime;
+
+    gameCanvas.context.clearRect(0, 0, gameCanvas.canvas.width, gameCanvas.canvas.height)
+
+    for (i = 0; i < lilyPads.length; i++) {
+        lilyPads[i].update();
+    }
+
+    bounceLilys();
 
     player.update();
+
+    gameCanvas.context.fillText(`${Math.trunc(timeElapsed / 60000).toString().padStart(2, "0")}:${Math.trunc((timeElapsed % 60000) / 1000).toString().padStart(2, "0")}`,
+        10, 50);
 }
 
 document.addEventListener("mousedown", () => {
