@@ -203,8 +203,8 @@ class LilyPad {
     radius = 30;
     mass = 10;
 
-    maxXOffset = 100;
-    maxYOffset = 100;
+    maxXOffset = 400;
+    maxYOffset = 400;
 
     constructor() {
         this.recycle();
@@ -260,30 +260,41 @@ function mainLoop() {
     }
 
     let theta = 0;
-    let ix = 0;
-    let iy = 0;
+    let vi = 0;
+    let vj = 0;
+    let alphaI = 0;
+    let alphaJ = 0;
+    let a = 0;
     for (i = 0; i < lilyPads.length - 1; i++) {
         for (j = i + 1; j < lilyPads.length; j++) {
             // All lilipads are the same size
             if (Math.pow(lilyPads[i].x - lilyPads[j].x, 2) + Math.pow(lilyPads[i].y - lilyPads[j].y, 2) <= Math.pow(2 * lilyPads[i].radius, 2)) {
-                // All lilypads are the same mass
-                // v_avg = (v_i + v_j) / 2
-                // delta_v = -2 * (v_i - v_avg) = 2 (v_avg - v_i) = v_j - v_i
-                // v_i + delta_v = v_i + v_j - v_i = v_j
+                // All lilypads are the same mass, so mass cancels out of momentum equations
 
+                // The angle from j to i
                 theta = Math.atan2(lilyPads[i].y - lilyPads[j].y, lilyPads[i].x - lilyPads[j].x);
 
-                ix = lilyPads[i].vx;
-                iy = lilyPads[i].vy;
+                // The speeds of the two lilypads
+                vi = Math.sqrt(Math.pow(lilyPads[i].vx, 2) + Math.pow(lilyPads[i].vy, 2));
+                vj = Math.sqrt(Math.pow(lilyPads[j].vx, 2) + Math.pow(lilyPads[j].vy, 2));
 
-                lilyPads[i].vx = lilyPads[j].vx;
-                lilyPads[i].vy = lilyPads[j].vy;
+                // The angles between the relevant velocity and theta
+                alphaI = Math.atan2(lilyPads[i].vy, lilyPads[i].vx) - theta;
+                alphaJ = Math.atan2(lilyPads[j].vy, lilyPads[j].vx) - theta;
 
-                lilyPads[j].vx = ix;
-                lilyPads[j].vy = iy;
+                // The magnitude of acceleration from j to i
+                a = vj * Math.cos(alphaJ) - vi * Math.cos(alphaI);
 
-                lilyPads[i].x = lilyPads[j].x + 2.01 * lilyPads[i].radius * Math.cos(theta);
-                lilyPads[i].y = lilyPads[j].y + 2.01 * lilyPads[i].radius * Math.sin(theta);
+                // Apply the acceleration
+                lilyPads[i].vx += a * Math.cos(theta);
+                lilyPads[i].vy += a * Math.sin(theta);
+
+                lilyPads[j].vx -= a * Math.cos(theta);
+                lilyPads[j].vy -= a * Math.sin(theta);
+
+                // Move i outside of j (in case they spawned merged)
+                lilyPads[i].x = lilyPads[j].x + 2 * lilyPads[i].radius * Math.cos(theta);
+                lilyPads[i].y = lilyPads[j].y + 2 * lilyPads[i].radius * Math.sin(theta);
             }
         }
     }
